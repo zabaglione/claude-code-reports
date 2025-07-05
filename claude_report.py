@@ -338,13 +338,44 @@ class ClaudeReportGenerator:
             report.append("")
             
         # 時間帯別アクティビティ
-        if analysis["hourly_activity"]:
+        if analysis["hourly_activity"] or True:  # 常に表示
             report.append("## 時間帯別アクティビティ")
             report.append("")
-            for hour in sorted(analysis["hourly_activity"].keys()):
-                count = analysis["hourly_activity"][hour]
-                bar = "█" * (count // 5) if count > 0 else ""
-                report.append(f"- {hour:02d}時: {bar} ({count}件)")
+            
+            # 最大値を取得（正規化のため）
+            max_count = max(analysis["hourly_activity"].values()) if analysis["hourly_activity"] else 1
+            
+            # 24時間すべてを表示
+            report.append("```")
+            for hour in range(24):
+                count = analysis["hourly_activity"].get(hour, 0)
+                
+                # 5段階で活動量を表現
+                if count == 0:
+                    level = 0
+                else:
+                    # より細かい段階分け
+                    ratio = count / max_count
+                    if ratio >= 0.8:
+                        level = 5
+                    elif ratio >= 0.6:
+                        level = 4
+                    elif ratio >= 0.4:
+                        level = 3
+                    elif ratio >= 0.2:
+                        level = 2
+                    else:
+                        level = 1
+                
+                # ブロックで表現（GitHubスタイル）
+                blocks = "■" * level + "□" * (5 - level)
+                
+                # 6時間ごとに区切り線
+                if hour % 6 == 0 and hour > 0:
+                    report.append("")
+                    
+                report.append(f"{hour:02d}時: {blocks} {count:4d}")
+            report.append("```")
             report.append("")
             
         return "\n".join(report)
