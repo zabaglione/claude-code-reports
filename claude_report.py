@@ -105,7 +105,7 @@ def get_language(lang_override=None):
 class ClaudeReportGenerator:
     """Claude Codeの会話履歴を分析しレポートを生成するクラス"""
     
-    def __init__(self, base_path: str = "/Users/zabaglione/.claude/projects", language: str = 'en'):
+    def __init__(self, base_path: str = f"{os.environ.get('HOME')}/.claude/projects", language: str = 'en'):
         self.base_path = Path(base_path)
         self.sessions = []
         self.language = language
