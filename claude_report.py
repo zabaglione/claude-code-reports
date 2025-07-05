@@ -274,7 +274,13 @@ class ClaudeReportGenerator:
         # ヘッダー
         report.append("# Claude Code 会話履歴レポート")
         report.append(f"\n生成日時: {datetime.now().strftime('%Y年%m月%d日 %H:%M:%S')}")
+        
+        # アクティブなプロジェクト数をカウント
+        active_projects = sum(1 for p in analysis["projects"].values() 
+                            if p["sessions"] and p["first_activity"] and p["last_activity"])
+        
         report.append(f"総セッション数: {analysis['total_sessions']}")
+        report.append(f"アクティブプロジェクト数: {active_projects}")
         report.append("")
         
         # プロジェクト別サマリー
@@ -284,15 +290,19 @@ class ClaudeReportGenerator:
         for project_name, project_data in sorted(analysis["projects"].items()):
             if not project_data["sessions"]:
                 continue
+            
+            # タイムスタンプがないプロジェクトはスキップ
+            if not project_data["first_activity"] or not project_data["last_activity"]:
+                continue
                 
             report.append(f"### 📁 {project_name}")
             report.append(f"- セッション数: {len(project_data['sessions'])}")
             report.append(f"- メッセージ数: {project_data['message_count']}")
             
-            if project_data["first_activity"] and project_data["last_activity"]:
-                first = project_data["first_activity"].strftime('%Y/%m/%d %H:%M')
-                last = project_data["last_activity"].strftime('%Y/%m/%d %H:%M')
-                report.append(f"- 期間: {first} 〜 {last}")
+            # タイムスタンプは必ず存在する（上でチェック済み）
+            first = project_data["first_activity"].strftime('%Y/%m/%d %H:%M')
+            last = project_data["last_activity"].strftime('%Y/%m/%d %H:%M')
+            report.append(f"- 期間: {first} 〜 {last}")
                 
             if project_data["topics"]:
                 report.append("- 主な話題:")
