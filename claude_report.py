@@ -204,17 +204,21 @@ class ClaudeReportGenerator:
             for entry in session["data"]:
                 # タイムスタンプの処理
                 if 'timestamp' in entry:
-                    timestamp = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00'))
+                    # UTCタイムスタンプを読み込み
+                    timestamp_utc = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00'))
                     
-                    # 最初と最後のアクティビティを記録
-                    if project_data["first_activity"] is None or timestamp < project_data["first_activity"]:
-                        project_data["first_activity"] = timestamp
-                    if project_data["last_activity"] is None or timestamp > project_data["last_activity"]:
-                        project_data["last_activity"] = timestamp
+                    # システムのローカルタイムゾーンに変換
+                    timestamp_local = timestamp_utc.astimezone()
+                    
+                    # 最初と最後のアクティビティを記録（UTC時刻で保存）
+                    if project_data["first_activity"] is None or timestamp_utc < project_data["first_activity"]:
+                        project_data["first_activity"] = timestamp_utc
+                    if project_data["last_activity"] is None or timestamp_utc > project_data["last_activity"]:
+                        project_data["last_activity"] = timestamp_utc
                         
-                    # 日別・時間別アクティビティ
-                    analysis["daily_activity"][timestamp.date()] += 1
-                    analysis["hourly_activity"][timestamp.hour] += 1
+                    # 日別・時間別アクティビティ（ローカル時刻で集計）
+                    analysis["daily_activity"][timestamp_local.date()] += 1
+                    analysis["hourly_activity"][timestamp_local.hour] += 1
                 
                 # メッセージとツール使用の分析
                 if entry.get("type") == "user" and "message" in entry:
@@ -300,8 +304,9 @@ class ClaudeReportGenerator:
             report.append(f"- メッセージ数: {project_data['message_count']}")
             
             # タイムスタンプは必ず存在する（上でチェック済み）
-            first = project_data["first_activity"].strftime('%Y/%m/%d %H:%M')
-            last = project_data["last_activity"].strftime('%Y/%m/%d %H:%M')
+            # ローカルタイムゾーンに変換して表示
+            first = project_data["first_activity"].astimezone().strftime('%Y/%m/%d %H:%M')
+            last = project_data["last_activity"].astimezone().strftime('%Y/%m/%d %H:%M')
             report.append(f"- 期間: {first} 〜 {last}")
                 
             if project_data["topics"]:
