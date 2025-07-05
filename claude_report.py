@@ -10,18 +10,106 @@ import json
 import os
 import sys
 import re
+import locale
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict, Counter
 
 
+# 多言語対応のメッセージ辞書
+MESSAGES = {
+    'en': {
+        'report_title': 'Claude Code Conversation History Report',
+        'generated_at': 'Generated at',
+        'total_sessions': 'Total sessions',
+        'active_projects': 'Active projects',
+        'project_summary': 'Project Summary',
+        'sessions': 'Sessions',
+        'messages': 'Messages',
+        'period': 'Period',
+        'main_topics': 'Main topics',
+        'tools_used': 'Tools used',
+        'tool_stats_overall': 'Tool Usage Statistics (Overall)',
+        'daily_activity': 'Daily Activity',
+        'hourly_activity': 'Hourly Activity',
+        'times': 'times',
+        'items': 'items',
+        'image_file': 'Image file',
+        'image_data': 'Image data processing',
+        'screenshot': 'Screenshot analysis',
+        'file_create': 'File creation',
+        'file_edit': 'File edit',
+        'file_read': 'File read',
+        'file_operation': 'File operation',
+        'web_reference': 'Web reference',
+        'code_implementation': 'Code implementation request',
+        'error_fix': 'Error fix/Debug',
+        'code_related': 'Code related work',
+        'loading_data': 'Loading data... (Period: {} to {})',
+        'analyzing_data': 'Analyzing data...',
+        'generating_report': 'Generating report...',
+        'report_saved': 'Report saved to {}',
+        'error': 'Error',
+        'command_execution': 'command execution'
+    },
+    'ja': {
+        'report_title': 'Claude Code 会話履歴レポート',
+        'generated_at': '生成日時',
+        'total_sessions': '総セッション数',
+        'active_projects': 'アクティブプロジェクト数',
+        'project_summary': 'プロジェクト別サマリー',
+        'sessions': 'セッション数',
+        'messages': 'メッセージ数',
+        'period': '期間',
+        'main_topics': '主な話題',
+        'tools_used': '使用ツール',
+        'tool_stats_overall': 'ツール使用統計（全体）',
+        'daily_activity': '日別アクティビティ',
+        'hourly_activity': '時間帯別アクティビティ',
+        'times': '回',
+        'items': '件',
+        'image_file': '画像ファイル',
+        'image_data': '画像データの処理',
+        'screenshot': 'スクリーンショットの解析',
+        'file_create': 'ファイル作成',
+        'file_edit': 'ファイル編集',
+        'file_read': 'ファイル確認',
+        'file_operation': 'ファイル操作',
+        'web_reference': 'Web参照',
+        'code_implementation': 'コード実装依頼',
+        'error_fix': 'エラー修正・デバッグ',
+        'code_related': 'コード関連の作業',
+        'loading_data': 'データを読み込み中... (期間: {} 〜 {})',
+        'analyzing_data': 'データを分析中...',
+        'generating_report': 'レポートを生成中...',
+        'report_saved': 'レポートを {} に保存しました',
+        'error': 'エラー',
+        'command_execution': 'コマンド実行'
+    }
+}
+
+
+def get_language(lang_override=None):
+    """言語設定を取得（デフォルトは英語、日本語に対応）"""
+    if lang_override:
+        return 'ja' if lang_override.lower() == 'ja' else 'en'
+    
+    # LANG環境変数をチェック
+    lang_env = os.environ.get('LANG', '').lower()
+    if 'ja' in lang_env or 'jp' in lang_env:
+        return 'ja'
+    return 'en'
+
+
 class ClaudeReportGenerator:
     """Claude Codeの会話履歴を分析しレポートを生成するクラス"""
     
-    def __init__(self, base_path: str = "/Users/zabaglione/.claude/projects"):
+    def __init__(self, base_path: str = "/Users/zabaglione/.claude/projects", language: str = 'en'):
         self.base_path = Path(base_path)
         self.sessions = []
+        self.language = language
+        self.msg = MESSAGES[language]
         
     def load_sessions(self, from_date: datetime, to_date: datetime, project_filter: Optional[str] = None) -> None:
         """指定期間のセッションデータを読み込む"""
@@ -85,15 +173,15 @@ class ClaudeReportGenerator:
         image_match = re.search(image_pattern, content, re.IGNORECASE)
         if image_match:
             filename = image_match.group(1)
-            return f"画像ファイル: {filename}"
+            return f"{self.msg['image_file']}: {filename}"
             
         # Base64データの検出
         if 'data:image' in content or (len(content) > 1000 and re.match(r'^[A-Za-z0-9+/\s]+={0,2}$', content)):
-            return "画像データの処理"
+            return self.msg['image_data']
             
         # スクリーンショットパスの検出
         if 'screenshot' in content.lower() or 'screencapture' in content.lower():
-            return "スクリーンショットの解析"
+            return self.msg['screenshot']
             
         # ファイルパスの検出（Read/Write系の操作）
         file_path_match = re.search(r'(?:^|\s)(/[\w\-./]+\.\w+)', content)
@@ -103,13 +191,13 @@ class ClaudeReportGenerator:
             
             # ファイル操作の種類を判定
             if '作成' in content or 'create' in content.lower() or '生成' in content:
-                return f"ファイル作成: {filename}"
+                return f"{self.msg['file_create']}: {filename}"
             elif '編集' in content or 'edit' in content.lower() or '修正' in content:
-                return f"ファイル編集: {filename}"
+                return f"{self.msg['file_edit']}: {filename}"
             elif '読み' in content or 'read' in content.lower() or '確認' in content:
-                return f"ファイル確認: {filename}"
+                return f"{self.msg['file_read']}: {filename}"
             else:
-                return f"ファイル操作: {filename}"
+                return f"{self.msg['file_operation']}: {filename}"
                 
         # URLの検出
         url_match = re.search(r'https?://[^\s]+', content)
@@ -117,7 +205,7 @@ class ClaudeReportGenerator:
             url = url_match.group(0)
             domain = re.search(r'https?://([^/]+)', url)
             if domain:
-                return f"Web参照: {domain.group(1)}"
+                return f"{self.msg['web_reference']}: {domain.group(1)}"
                 
         # コード記述依頼の検出
         code_keywords = ['実装', 'コード', 'プログラム', '関数', 'クラス', 'メソッド', 
@@ -126,11 +214,11 @@ class ClaudeReportGenerator:
             if keyword in content.lower():
                 # より具体的な内容を抽出
                 if '作成' in content or '作って' in content or 'create' in content.lower():
-                    return "コード実装依頼"
+                    return self.msg['code_implementation']
                 elif 'エラー' in content or 'error' in content.lower() or '修正' in content:
-                    return "エラー修正・デバッグ"
+                    return self.msg['error_fix']
                 else:
-                    return "コード関連の作業"
+                    return self.msg['code_related']
                     
         # その他の一般的なトピック
         if len(content) > 100:
@@ -162,7 +250,7 @@ class ClaudeReportGenerator:
                 cmd_parts = command.split()
                 if cmd_parts:
                     cmd_name = cmd_parts[0]
-                    return f"[{tool_name}] {cmd_name}コマンド実行"
+                    return f"[{tool_name}] {cmd_name} {self.msg['command_execution']}"
                     
         elif tool_name == "WebSearch":
             query = tool_input.get("query", "")
@@ -276,19 +364,26 @@ class ClaudeReportGenerator:
         report = []
         
         # ヘッダー
-        report.append("# Claude Code 会話履歴レポート")
-        report.append(f"\n生成日時: {datetime.now().strftime('%Y年%m月%d日 %H:%M:%S')}")
+        report.append(f"# {self.msg['report_title']}")
+        
+        # 日付フォーマットを言語に応じて変更
+        if self.language == 'ja':
+            date_format = '%Y年%m月%d日 %H:%M:%S'
+        else:
+            date_format = '%Y-%m-%d %H:%M:%S'
+        
+        report.append(f"\n{self.msg['generated_at']}: {datetime.now().strftime(date_format)}")
         
         # アクティブなプロジェクト数をカウント
         active_projects = sum(1 for p in analysis["projects"].values() 
                             if p["sessions"] and p["first_activity"] and p["last_activity"])
         
-        report.append(f"総セッション数: {analysis['total_sessions']}")
-        report.append(f"アクティブプロジェクト数: {active_projects}")
+        report.append(f"{self.msg['total_sessions']}: {analysis['total_sessions']}")
+        report.append(f"{self.msg['active_projects']}: {active_projects}")
         report.append("")
         
         # プロジェクト別サマリー
-        report.append("## プロジェクト別サマリー")
+        report.append(f"## {self.msg['project_summary']}")
         report.append("")
         
         for project_name, project_data in sorted(analysis["projects"].items()):
@@ -300,46 +395,49 @@ class ClaudeReportGenerator:
                 continue
                 
             report.append(f"### 📁 {project_name}")
-            report.append(f"- セッション数: {len(project_data['sessions'])}")
-            report.append(f"- メッセージ数: {project_data['message_count']}")
+            report.append(f"- {self.msg['sessions']}: {len(project_data['sessions'])}")
+            report.append(f"- {self.msg['messages']}: {project_data['message_count']}")
             
             # タイムスタンプは必ず存在する（上でチェック済み）
             # ローカルタイムゾーンに変換して表示
-            first = project_data["first_activity"].astimezone().strftime('%Y/%m/%d %H:%M')
-            last = project_data["last_activity"].astimezone().strftime('%Y/%m/%d %H:%M')
-            report.append(f"- 期間: {first} 〜 {last}")
+            time_format = '%Y/%m/%d %H:%M' if self.language == 'ja' else '%Y-%m-%d %H:%M'
+            first = project_data["first_activity"].astimezone().strftime(time_format)
+            last = project_data["last_activity"].astimezone().strftime(time_format)
+            separator = ' 〜 ' if self.language == 'ja' else ' - '
+            report.append(f"- {self.msg['period']}: {first}{separator}{last}")
                 
             if project_data["topics"]:
-                report.append("- 主な話題:")
+                report.append(f"- {self.msg['main_topics']}:")
                 for topic in project_data["topics"]:
                     report.append(f"  - {topic}")
                     
             if project_data["tool_usage"]:
-                report.append("- 使用ツール:")
+                report.append(f"- {self.msg['tools_used']}:")
                 for tool, count in project_data["tool_usage"].most_common(5):
-                    report.append(f"  - {tool}: {count}回")
+                    report.append(f"  - {tool}: {count} {self.msg['times']}")
                     
             report.append("")
             
         # 全体のツール使用統計
         if analysis["tool_usage_overall"]:
-            report.append("## ツール使用統計（全体）")
+            report.append(f"## {self.msg['tool_stats_overall']}")
             report.append("")
             for tool, count in analysis["tool_usage_overall"].most_common(10):
-                report.append(f"- {tool}: {count}回")
+                report.append(f"- {tool}: {count} {self.msg['times']}")
             report.append("")
             
         # 日別アクティビティ
         if analysis["daily_activity"]:
-            report.append("## 日別アクティビティ")
+            report.append(f"## {self.msg['daily_activity']}")
             report.append("")
+            date_format = '%Y/%m/%d' if self.language == 'ja' else '%Y-%m-%d'
             for date, count in sorted(analysis["daily_activity"].items()):
-                report.append(f"- {date.strftime('%Y/%m/%d')}: {count}件")
+                report.append(f"- {date.strftime(date_format)}: {count} {self.msg['items']}")
             report.append("")
             
         # 時間帯別アクティビティ
         if analysis["hourly_activity"] or True:  # 常に表示
-            report.append("## 時間帯別アクティビティ")
+            report.append(f"## {self.msg['hourly_activity']}")
             report.append("")
             
             # 最大値を取得（正規化のため）
@@ -374,7 +472,8 @@ class ClaudeReportGenerator:
                 if hour % 6 == 0 and hour > 0:
                     report.append("")
                     
-                report.append(f"{hour:02d}時: {blocks} {count:4d}")
+                hour_label = f"{hour:02d}時" if self.language == 'ja' else f"{hour:02d}:00"
+                report.append(f"{hour_label}: {blocks} {count:4d}")
             report.append("```")
             report.append("")
             
@@ -383,32 +482,54 @@ class ClaudeReportGenerator:
 
 def main():
     """メイン関数"""
-    parser = argparse.ArgumentParser(
-        description="Claude Codeとの会話履歴を分析しレポートを生成します"
-    )
+    # 言語を事前に判定してヘルプメッセージを設定
+    lang = get_language()
+    
+    if lang == 'ja':
+        description = "Claude Codeとの会話履歴を分析しレポートを生成します"
+        help_days = "過去何日分のデータを分析するか（デフォルト: 7日）"
+        help_from = "開始日（YYYY-MM-DD形式）"
+        help_to = "終了日（YYYY-MM-DD形式）"
+        help_project = "特定のプロジェクトのみを対象にする"
+        help_output = "レポートの出力先ファイル（指定しない場合は標準出力）"
+        help_lang = "出力言語 (en/ja)"
+    else:
+        description = "Analyze Claude Code conversation history and generate reports"
+        help_days = "Number of past days to analyze (default: 7)"
+        help_from = "Start date (YYYY-MM-DD format)"
+        help_to = "End date (YYYY-MM-DD format)"
+        help_project = "Filter by specific project"
+        help_output = "Output file path (stdout if not specified)"
+        help_lang = "Output language (en/ja)"
+    
+    parser = argparse.ArgumentParser(description=description)
     
     # 期間指定オプション
     parser.add_argument(
         "--days", type=int, default=7,
-        help="過去何日分のデータを分析するか（デフォルト: 7日）"
+        help=help_days
     )
     parser.add_argument(
         "--from", dest="from_date", type=str,
-        help="開始日（YYYY-MM-DD形式）"
+        help=help_from
     )
     parser.add_argument(
         "--to", dest="to_date", type=str,
-        help="終了日（YYYY-MM-DD形式）"
+        help=help_to
     )
     
     # その他のオプション
     parser.add_argument(
         "--project", type=str,
-        help="特定のプロジェクトのみを対象にする"
+        help=help_project
     )
     parser.add_argument(
         "--output", "-o", type=str,
-        help="レポートの出力先ファイル（指定しない場合は標準出力）"
+        help=help_output
+    )
+    parser.add_argument(
+        "--lang", type=str, choices=['en', 'ja'],
+        help=help_lang
     )
     
     args = parser.parse_args()
@@ -423,29 +544,33 @@ def main():
         to_date = datetime.now(timezone.utc)
         from_date = to_date - timedelta(days=args.days)
         
+    # 言語設定の決定
+    language = get_language(args.lang)
+    msg = MESSAGES[language]
+    
     # レポート生成
     try:
-        generator = ClaudeReportGenerator()
+        generator = ClaudeReportGenerator(language=language)
         
-        print(f"データを読み込み中... (期間: {from_date.date()} 〜 {to_date.date()})", file=sys.stderr)
+        print(msg['loading_data'].format(from_date.date(), to_date.date()), file=sys.stderr)
         generator.load_sessions(from_date, to_date, args.project)
         
-        print("データを分析中...", file=sys.stderr)
+        print(msg['analyzing_data'], file=sys.stderr)
         analysis = generator.analyze_sessions()
         
-        print("レポートを生成中...", file=sys.stderr)
+        print(msg['generating_report'], file=sys.stderr)
         report = generator.generate_markdown_report(analysis)
         
         # レポート出力
         if args.output:
             with open(args.output, 'w', encoding='utf-8') as f:
                 f.write(report)
-            print(f"レポートを {args.output} に保存しました", file=sys.stderr)
+            print(msg['report_saved'].format(args.output), file=sys.stderr)
         else:
             print(report)
             
     except Exception as e:
-        print(f"エラー: {e}", file=sys.stderr)
+        print(f"{msg['error']}: {e}", file=sys.stderr)
         sys.exit(1)
 
 
