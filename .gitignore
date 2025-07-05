@@ -45,8 +45,7 @@ env/
 Thumbs.db
 
 # Project specific
-*.md
-!README.md
 *.jsonl
 test_*
-sample_*
+sample_report.md
+improved_report.md
