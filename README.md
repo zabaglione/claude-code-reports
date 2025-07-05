@@ -19,6 +19,7 @@ This tool parses Claude Code conversation history (JSONL files) and generates Ma
 - 🔧 **Tool Usage Analysis**: Tracks frequency of Read, Write, Edit, Bash, WebFetch and other tools
 - 📅 **Flexible Date Filtering**: Filter by number of days or specific date ranges
 - 🎯 **Smart Summarization**: Auto-categorizes images, code requests, error fixes, etc.
+- 🌐 **Multilingual Support**: Automatic language detection (English/Japanese) based on system locale
 - 🚀 **Fast Processing**: Uses only Python standard library, no external dependencies
 
 ## Installation
@@ -51,7 +52,21 @@ python3 claude_report.py --project myproject
 
 # Save to file
 python3 claude_report.py -o report.md
+
+# Force Japanese output
+python3 claude_report.py --lang ja
+
+# Force English output
+python3 claude_report.py --lang en
 ```
+
+### Language Detection
+
+The tool automatically detects your system language from the `LANG` environment variable:
+- Japanese (`ja_JP`, etc.) → Japanese output
+- All others → English output (default)
+
+You can override this with the `--lang` option.
 
 ### Command Line Options
 
@@ -62,6 +77,7 @@ python3 claude_report.py -o report.md
 | `--to` | End date (YYYY-MM-DD format) | - |
 | `--project` | Filter by project name | - |
 | `--output`, `-o` | Output file path | stdout |
+| `--lang` | Output language (en/ja) | Auto-detect |
 
 ## Report Contents
 

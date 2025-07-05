@@ -17,6 +17,7 @@ Claude Codeとの会話履歴を分析し、プロジェクト別・期間別の
 - 🔧 **ツール使用分析**: Read, Write, Edit, Bash, WebFetch等の使用頻度を分析
 - 📅 **柔軟な期間指定**: 日数指定または開始・終了日を直接指定可能
 - 🎯 **スマートな要約**: 画像ファイル、コード実装依頼、エラー修正等を自動分類
+- 🌐 **多言語対応**: システムロケールに基づく自動言語検出（英語/日本語）
 - 🚀 **高速処理**: Python標準ライブラリのみ使用、外部依存なし
 
 ## インストール
@@ -49,7 +50,21 @@ python3 claude_report.py --project myproject
 
 # ファイルに保存
 python3 claude_report.py -o report.md
+
+# 日本語出力を強制
+python3 claude_report.py --lang ja
+
+# 英語出力を強制
+python3 claude_report.py --lang en
 ```
+
+### 言語の自動検出
+
+ツールは`LANG`環境変数からシステムの言語を自動検出します：
+- 日本語（`ja_JP`等）→ 日本語出力
+- その他 → 英語出力（デフォルト）
+
+`--lang`オプションで手動指定することも可能です。
 
 ### コマンドラインオプション
 
@@ -60,6 +75,7 @@ python3 claude_report.py -o report.md
 | `--to` | 終了日（YYYY-MM-DD形式） | - |
 | `--project` | 特定のプロジェクト名でフィルタ | - |
 | `--output`, `-o` | レポートの出力先ファイル | 標準出力 |
+| `--lang` | 出力言語（en/ja） | 自動検出 |
 
 ## レポートの内容
 
