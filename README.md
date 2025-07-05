@@ -1,99 +1,101 @@
 # Claude Code Report Generator
 
-Claude Codeとの会話履歴を分析し、プロジェクト別・期間別のサマリーレポートを生成するCLIツールです。
+[日本語版 README](README.ja.md)
 
-## 概要
+A CLI tool to analyze Claude Code conversation history and generate project-based and period-based summary reports.
 
-このツールは、Claude Codeの会話履歴（JSONLファイル）を解析し、以下の情報を含むMarkdownレポートを生成します：
+## Overview
 
-- プロジェクト別の活動サマリー
-- ツール使用統計
-- 日別・時間帯別のアクティビティ分析
-- 会話内容の要約（画像やファイル操作を含む）
+This tool parses Claude Code conversation history (JSONL files) and generates Markdown reports containing:
 
-## 特徴
+- Project-wise activity summaries
+- Tool usage statistics
+- Daily and hourly activity analysis
+- Smart content summarization (including images and file operations)
 
-- 📊 **詳細な統計情報**: プロジェクト毎のセッション数、メッセージ数、期間を集計
-- 🔧 **ツール使用分析**: Read, Write, Edit, Bash, WebFetch等の使用頻度を分析
-- 📅 **柔軟な期間指定**: 日数指定または開始・終了日を直接指定可能
-- 🎯 **スマートな要約**: 画像ファイル、コード実装依頼、エラー修正等を自動分類
-- 🚀 **高速処理**: Python標準ライブラリのみ使用、外部依存なし
+## Features
 
-## インストール
+- 📊 **Detailed Statistics**: Aggregates session counts, message counts, and time ranges per project
+- 🔧 **Tool Usage Analysis**: Tracks frequency of Read, Write, Edit, Bash, WebFetch and other tools
+- 📅 **Flexible Date Filtering**: Filter by number of days or specific date ranges
+- 🎯 **Smart Summarization**: Auto-categorizes images, code requests, error fixes, etc.
+- 🚀 **Fast Processing**: Uses only Python standard library, no external dependencies
+
+## Installation
 
 ```bash
-# リポジトリのクローン
+# Clone the repository
 git clone https://github.com/zabaglione/claude-code-reports.git
 cd claude-code-reports
 
-# 実行権限の付加
+# Make executable
 chmod +x claude_report.py
 ```
 
-## 使い方
+## Usage
 
-### 基本的な使用方法
+### Basic Usage
 
 ```bash
-# 過去7日間のレポートを生成（デフォルト）
+# Generate report for the last 7 days (default)
 python3 claude_report.py
 
-# 過去30日間のレポートを生成
+# Generate report for the last 30 days
 python3 claude_report.py --days 30
 
-# 特定の期間を指定
+# Specify date range
 python3 claude_report.py --from 2025-07-01 --to 2025-07-05
 
-# 特定のプロジェクトのみを対象
+# Filter by project
 python3 claude_report.py --project myproject
 
-# ファイルに保存
+# Save to file
 python3 claude_report.py -o report.md
 ```
 
-### コマンドラインオプション
+### Command Line Options
 
-| オプション | 説明 | デフォルト |
-|------------|------|------------|
-| `--days` | 過去何日分のデータを分析するか | 7 |
-| `--from` | 開始日（YYYY-MM-DD形式） | - |
-| `--to` | 終了日（YYYY-MM-DD形式） | - |
-| `--project` | 特定のプロジェクト名でフィルタ | - |
-| `--output`, `-o` | レポートの出力先ファイル | 標準出力 |
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--days` | Number of past days to analyze | 7 |
+| `--from` | Start date (YYYY-MM-DD format) | - |
+| `--to` | End date (YYYY-MM-DD format) | - |
+| `--project` | Filter by project name | - |
+| `--output`, `-o` | Output file path | stdout |
 
-## レポートの内容
+## Report Contents
 
-生成されるレポートには以下の情報が含まれます：
+The generated report includes:
 
-### プロジェクト別サマリー
-- セッション数とメッセージ数
-- 活動期間（最初と最後のアクティビティ）
-- 主な話題（自動要約）
-  - 画像ファイルの処理
-  - コード実装依頼
-  - エラー修正・デバッグ
-  - ファイル操作（作成/編集/確認）
-  - Web参照
-- ツール使用回数（上位5つ）
+### Project Summaries
+- Session and message counts
+- Activity period (first and last activity)
+- Main topics (auto-summarized)
+  - Image file processing
+  - Code implementation requests
+  - Error fixes and debugging
+  - File operations (create/edit/read)
+  - Web references
+- Tool usage counts (top 5)
 
-### 全体統計
-- ツール使用統計（全プロジェクト合計）
-- 日別アクティビティ
-- 時間帯別アクティビティ（視覚的なバーグラフ付き）
+### Overall Statistics
+- Tool usage statistics across all projects
+- Daily activity breakdown
+- Hourly activity visualization (GitHub-style blocks)
 
-## 必要な環境
+## Requirements
 
-- Python 3.6以上
-- Claude Codeの会話履歴ディレクトリ（`~/.claude/projects/`）
+- Python 3.6 or higher
+- Claude Code conversation history directory (`~/.claude/projects/`)
 
-## ライセンス
+## License
 
 MIT License
 
-## 貢献
+## Contributing
 
-プルリクエストを歓迎します。大きな変更を行う場合は、まずイシューを作成して変更内容について議論してください。
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-## 作者
+## Author
 
 z_zabaglione ([@z_zabaglione](https://x.com/z_zabaglione))
