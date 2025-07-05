@@ -1,0 +1,5 @@
+# Claude Code Report Generator
+# Python標準ライブラリのみを使用しているため、追加の依存関係はありません
+
+# 動作確認済みPythonバージョン
+# Python >= 3.6
