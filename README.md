@@ -23,7 +23,7 @@ Claude Codeとの会話履歴を分析し、プロジェクト別・期間別の
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/yourusername/claude-code-reports.git
+git clone https://github.com/zabaglione/claude-code-reports.git
 cd claude-code-reports
 
 # 実行権限の付加
@@ -96,4 +96,4 @@ MIT License
 
 ## 作者
 
-Your Name (@yourusername)
+z_zabaglione ([@z_zabaglione](https://x.com/z_zabaglione))

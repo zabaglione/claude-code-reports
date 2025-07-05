@@ -6,12 +6,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="claude-code-report",
     version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="z_zabaglione",
+    author_email="",
     description="Claude Codeとの会話履歴を分析しレポートを生成するCLIツール",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/claude-code-reports",
+    url="https://github.com/zabaglione/claude-code-reports",
     py_modules=["claude_report"],
     classifiers=[
         "Programming Language :: Python :: 3",
